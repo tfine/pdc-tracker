@@ -478,6 +478,9 @@ def _translate_sql(sql):
     # datetime('now') → CURRENT_TIMESTAMP
     sql = sql.replace("datetime('now')", "CURRENT_TIMESTAMP")
 
+    # date('now') → CURRENT_DATE
+    sql = sql.replace("date('now')", "CURRENT_DATE")
+
     # INSERT OR IGNORE INTO → INSERT INTO … ON CONFLICT DO NOTHING
     is_insert_or_ignore = bool(
         re.search(r"INSERT\s+OR\s+IGNORE\s+INTO", sql, re.IGNORECASE)

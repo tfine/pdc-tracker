@@ -71,10 +71,17 @@ def migrate():
             batch = []
             for row in rows:
                 d = {c: row[c] for c in columns}
-                # Convert SQLite boolean int → Python bool
                 for k, v in d.items():
+                    # Convert SQLite boolean int → Python bool
                     if isinstance(v, int) and k in ("has_transcript", "verified"):
                         d[k] = bool(v)
+                    # Clean numeric fields with trailing commas/whitespace
+                    if k in ("latitude", "longitude", "match_confidence") and isinstance(v, str):
+                        cleaned = v.strip().rstrip(",")
+                        try:
+                            d[k] = float(cleaned)
+                        except (ValueError, TypeError):
+                            d[k] = None
                 batch.append(d)
 
             dest.execute(text(sql), batch)
