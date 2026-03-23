@@ -7,6 +7,12 @@ healthcheckPath = "/"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
+# Check for new agendas/minutes every 2 hours
+[[cron]]
+schedule = "0 */2 * * *"
+command = "python -m pdc.agenda_check"
+
+# Full sync weekly on Wednesdays at 2 PM UTC (10 AM NYC)
 [[cron]]
 schedule = "0 14 * * 3"
 command = "python -m pdc.sync_runner"
