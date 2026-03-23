@@ -31,7 +31,7 @@ def project_list():
         clauses.append("p.current_stage = ?")
         params.append(stage)
     if agency:
-        clauses.append("p.lead_agency LIKE ?")
+        clauses.append("p.lead_agency ILIKE ?")
         params.append(f"%{agency}%")
     if result_filter:
         clauses.append("p.final_result = ?")

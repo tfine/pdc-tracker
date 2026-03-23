@@ -503,6 +503,10 @@ def _translate_sql(sql):
         flags=re.IGNORECASE,
     )
 
+    # ILIKE → LIKE (SQLite LIKE is already case-insensitive for ASCII)
+    # This is a no-op for PostgreSQL; for SQLite we reverse it in the else branch
+    # (handled below)
+
     # PRAGMA statements → no-op
     if sql.strip().upper().startswith("PRAGMA"):
         return "SELECT 1"
@@ -634,6 +638,31 @@ class _PgConnection:
 # Engine / init / get_db  (public API — unchanged interface)
 # ---------------------------------------------------------------------------
 
+class _SqliteConnection:
+    """Thin wrapper around sqlite3.Connection to handle ILIKE → LIKE."""
+
+    def __init__(self, conn):
+        self._conn = conn
+
+    def execute(self, sql, params=None):
+        sql = re.sub(r'\bILIKE\b', 'LIKE', sql)
+        if params:
+            return self._conn.execute(sql, params)
+        return self._conn.execute(sql)
+
+    def executescript(self, sql):
+        return self._conn.executescript(sql)
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
+
+    def close(self):
+        self._conn.close()
+
+
 _engine = None
 
 
@@ -682,12 +711,12 @@ def init_db(db_path: Path | None = None):
     # SQLite path (local dev)
     path = db_path or DB_PATH
     ensure_data_dir()
-    conn = sqlite3.connect(str(path))
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    conn.executescript(_TABLES_SQLITE)
-    return conn
+    raw = sqlite3.connect(str(path))
+    raw.row_factory = sqlite3.Row
+    raw.execute("PRAGMA journal_mode=WAL")
+    raw.execute("PRAGMA foreign_keys=ON")
+    raw.executescript(_TABLES_SQLITE)
+    return _SqliteConnection(raw)
 
 
 @contextmanager

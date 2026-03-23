@@ -64,8 +64,8 @@ def search():
             """SELECT project_id, title, borough, lead_agency,
                       current_stage, final_result
                FROM projects
-               WHERE title LIKE ? OR address LIKE ? OR lead_agency LIKE ?
-                  OR project_id LIKE ?
+               WHERE title ILIKE ? OR address ILIKE ? OR lead_agency ILIKE ?
+                  OR project_id ILIKE ?
                ORDER BY last_seen_date DESC NULLS LAST
                LIMIT 50""",
             (like, like, like, like),
