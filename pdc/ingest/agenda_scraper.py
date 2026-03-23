@@ -10,6 +10,11 @@ from pdc.config import (
     PDF_DIR, PRESENTATION_PDF_DIR, MINUTES_PDF_DIR,
 )
 
+_BROWSER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+}
+
 
 def discover_agenda_urls() -> list[dict]:
     """Scrape PDC pages for agenda PDF links."""
@@ -19,7 +24,7 @@ def discover_agenda_urls() -> list[dict]:
 
     for page_url in pages:
         try:
-            resp = httpx.get(page_url, timeout=30, follow_redirects=True)
+            resp = httpx.get(page_url, timeout=30, follow_redirects=True, headers=_BROWSER_HEADERS)
             resp.raise_for_status()
         except httpx.HTTPError:
             continue
@@ -56,7 +61,7 @@ def download_agenda(url: str, dest_dir: Path | None = None) -> Path:
     if dest.exists():
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
-    resp = httpx.get(url, timeout=60, follow_redirects=True)
+    resp = httpx.get(url, timeout=60, follow_redirects=True, headers=_BROWSER_HEADERS)
     resp.raise_for_status()
     dest.write_bytes(resp.content)
     return dest
@@ -106,7 +111,7 @@ def discover_minutes_urls() -> list[dict]:
 
     for page_url in pages:
         try:
-            resp = httpx.get(page_url, timeout=30, follow_redirects=True)
+            resp = httpx.get(page_url, timeout=30, follow_redirects=True, headers=_BROWSER_HEADERS)
             resp.raise_for_status()
         except httpx.HTTPError:
             continue
@@ -164,7 +169,7 @@ def sync_minutes(conn: sqlite3.Connection) -> dict:
         try:
             dest = MINUTES_PDF_DIR / item["filename"]
             if not dest.exists():
-                resp = httpx.get(url, timeout=60, follow_redirects=True)
+                resp = httpx.get(url, timeout=60, follow_redirects=True, headers=_BROWSER_HEADERS)
                 resp.raise_for_status()
                 dest.write_bytes(resp.content)
 
@@ -191,7 +196,7 @@ def download_presentation(url: str) -> Path | None:
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
     try:
-        resp = httpx.get(url, timeout=60, follow_redirects=True)
+        resp = httpx.get(url, timeout=60, follow_redirects=True, headers=_BROWSER_HEADERS)
         resp.raise_for_status()
         dest.write_bytes(resp.content)
         return dest
