@@ -481,6 +481,10 @@ def _translate_sql(sql):
     # date('now') → CURRENT_DATE
     sql = sql.replace("date('now')", "CURRENT_DATE")
 
+    # Boolean: has_transcript = 1 → has_transcript = true, = 0 → = false
+    sql = re.sub(r"\b(verified|has_transcript)\s*=\s*1\b", r"\1 = true", sql)
+    sql = re.sub(r"\b(verified|has_transcript)\s*=\s*0\b", r"\1 = false", sql)
+
     # INSERT OR IGNORE INTO → INSERT INTO … ON CONFLICT DO NOTHING
     is_insert_or_ignore = bool(
         re.search(r"INSERT\s+OR\s+IGNORE\s+INTO", sql, re.IGNORECASE)

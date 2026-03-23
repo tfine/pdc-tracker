@@ -86,7 +86,7 @@ def verify(token):
             flash("Invalid or expired verification link.", "error")
             return redirect(url_for("home.index"))
         conn.execute(
-            "UPDATE subscribers SET verified = 1, verify_token = NULL WHERE id = ?",
+            "UPDATE subscribers SET verified = true, verify_token = NULL WHERE id = ?",
             (sub["id"],),
         )
     flash("Email verified! You'll receive alerts when items you watch are updated.", "success")
