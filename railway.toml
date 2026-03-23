@@ -1,0 +1,12 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "gunicorn 'pdc.web:create_app()' --bind 0.0.0.0:$PORT --workers 2"
+healthcheckPath = "/"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[[cron]]
+schedule = "0 14 * * 3"
+command = "python -m pdc.sync_runner"

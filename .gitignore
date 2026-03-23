@@ -1,0 +1,13 @@
+data/
+*.db
+*.db-journal
+*.db-wal
+__pycache__/
+*.pyc
+.env
+*.egg-info/
+dist/
+build/
+.venv/
+.claude/
+._*

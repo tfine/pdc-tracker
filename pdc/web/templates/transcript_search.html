@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Transcript Search{% endblock %}
+
+{% block content %}
+<h1>Search Meeting Transcripts</h1>
+
+<form action="{{ url_for('transcripts.search') }}" method="get" role="search">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search transcript text (e.g., street name, project, topic)..." aria-label="Search transcripts" id="transcript-q">
+    <button type="submit">Search</button>
+</form>
+
+{% if q %}
+<p>{{ results|length }} result{{ "s" if results|length != 1 }} for &ldquo;{{ q }}&rdquo;</p>
+{% endif %}
+
+{% if results %}
+{% for r in results %}
+<article>
+    <header>
+        <a href="{{ r['url'] }}" target="_blank">{{ r["title"] or "Meeting Video" }}</a>
+        <small> &mdash; {{ r["meeting_date"] or "Unknown date" }}{% if r["timestamp"] %} @ {{ (r["timestamp"] // 60) }}:{{ "%02d" | format(r["timestamp"] % 60) }}{% endif %}</small>
+    </header>
+    <p>{{ r["snippet"] | safe }}</p>
+</article>
+{% endfor %}
+{% elif q %}
+<p>No transcripts matched your search.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+{% endblock %}

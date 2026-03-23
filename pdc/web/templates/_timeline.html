@@ -1,0 +1,39 @@
+{# Stage progression timeline component — expects `timeline` row from project_stage_timeline view #}
+<div class="timeline-stages">
+    <h3>Stage Progression</h3>
+    <div class="stage-stepper">
+        {% set conceptual = timeline["conceptual_date"] %}
+        {% set preliminary = timeline["preliminary_date"] %}
+        {% set pf = timeline["preliminary_and_final_date"] %}
+        {% set final = timeline["final_date"] %}
+
+        <div class="stage-step {{ 'completed' if conceptual else 'pending' }}">
+            <div class="stage-dot"></div>
+            <div class="stage-label">Conceptual</div>
+            <div class="stage-date">{{ conceptual or "—" }}</div>
+        </div>
+
+        <div class="stage-connector {{ 'completed' if preliminary or pf else '' }}"></div>
+
+        <div class="stage-step {{ 'completed' if preliminary or pf else 'pending' }}">
+            <div class="stage-dot"></div>
+            <div class="stage-label">Preliminary</div>
+            <div class="stage-date">{{ preliminary or pf or "—" }}</div>
+        </div>
+
+        <div class="stage-connector {{ 'completed' if final or pf else '' }}"></div>
+
+        <div class="stage-step {{ 'completed' if final or pf else 'pending' }}">
+            <div class="stage-dot"></div>
+            <div class="stage-label">Final</div>
+            <div class="stage-date">{{ final or pf or "—" }}</div>
+        </div>
+    </div>
+
+    {% if timeline["days_conceptual_to_preliminary"] %}
+    <small>Conceptual → Preliminary: {{ timeline["days_conceptual_to_preliminary"] }} days</small><br>
+    {% endif %}
+    {% if timeline["days_preliminary_to_final"] %}
+    <small>Preliminary → Final: {{ timeline["days_preliminary_to_final"] }} days</small>
+    {% endif %}
+</div>

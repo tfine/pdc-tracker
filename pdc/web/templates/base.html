@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}PDC Tracker{% endblock %} — Washington Street Advocacy Group</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header class="container">
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('home.index') }}" class="brand"><strong>WSAG</strong> PDC Tracker</a></li>
+            </ul>
+            <ul>
+                <li><a href="{{ url_for('projects.project_list') }}">Projects</a></li>
+                <li><a href="{{ url_for('meetings.meeting_list') }}">Meetings</a></li>
+                <li><a href="{{ url_for('transcripts.search') }}">Transcripts</a></li>
+                <li><a href="{{ url_for('alerts.subscribe') }}">Alerts</a></li>
+                <li><a href="{{ url_for('about.about') }}">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, msg in messages %}
+        <div role="alert" class="flash-{{ category }}">{{ msg }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="container">
+        <hr>
+        <p>
+            <small>
+                <a href="{{ url_for('about.about') }}">Washington Street Advocacy Group</a> &middot;
+                NYC Public Design Commission Tracker &middot;
+                Data from <a href="https://data.cityofnewyork.us" target="_blank">NYC Open Data</a>
+            </small>
+        </p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project["title"][:60] }}{% endblock %}
+
+{% block content %}
+<hgroup>
+    <h1>{{ project["title"] }}</h1>
+    <p>
+        {{ project["borough"] or "Unknown Borough" }} &middot;
+        {{ project["lead_agency"] or "Unknown Agency" }} &middot;
+        {{ project["project_type"] or "" }}
+        {% if project["final_result"] %} &middot; <strong>{{ project["final_result"] }}</strong>{% endif %}
+    </p>
+</hgroup>
+
+<div class="grid">
+    <div>
+        <dl>
+            {% if project["address"] %}<dt>Address</dt><dd>{{ project["address"] }}</dd>{% endif %}
+            {% if project["location_name"] %}<dt>Location</dt><dd>{{ project["location_name"] }}</dd>{% endif %}
+            {% if project["cc_district"] %}<dt>City Council</dt><dd>{{ project["cc_district"] }}</dd>{% endif %}
+            {% if project["community_board"] %}<dt>Community Board</dt><dd>{{ project["community_board"] }}</dd>{% endif %}
+            {% if project["construction_type"] %}<dt>Construction</dt><dd>{{ project["construction_type"] }}</dd>{% endif %}
+            {% if project["public_private"] %}<dt>Public/Private</dt><dd>{{ project["public_private"] }}</dd>{% endif %}
+            {% if project["total_review_cycles"] %}<dt>Review Cycles</dt><dd>{{ project["total_review_cycles"] }}</dd>{% endif %}
+            <dt>First Seen</dt><dd>{{ project["first_seen_date"] or "N/A" }}</dd>
+            <dt>Last Seen</dt><dd>{{ project["last_seen_date"] or "N/A" }}</dd>
+        </dl>
+    </div>
+    <div>
+        {% if timeline %}
+        {% include "_timeline.html" %}
+        {% endif %}
+    </div>
+</div>
+
+<section>
+    <h2>Review History</h2>
+    <div class="overflow-auto">
+        <table>
+            <thead><tr>
+                <th>Date</th><th>Certificate</th><th>Stage</th><th>Action</th><th>Result</th><th>Source</th><th>Docs</th>
+            </tr></thead>
+            <tbody>
+            {% for e in events %}
+            <tr>
+                <td><a href="{{ url_for('meetings.meeting_detail', meeting_date=e['meeting_date']) }}">{{ e["meeting_date"] }}</a></td>
+                <td>{{ e["certificate_number"] or "" }}</td>
+                <td>{{ e["level_of_review"] or "" }}</td>
+                <td>{{ e["action"] or "" }}</td>
+                <td>{{ e["result"] or "" }}</td>
+                <td>{{ e["data_source"] }}</td>
+                <td>
+                    {% if e["presentation_url"] %}
+                    <a href="{{ CDN }}/presentations/{{ e['presentation_url'].split('/')[-1] }}" target="_blank">Presentation</a>
+                    {% endif %}
+                    {% if minutes_by_date.get(e["meeting_date"]) %}
+                    <a href="{{ CDN }}/minutes/{{ minutes_by_date[e['meeting_date']].split('/')[-1] }}" target="_blank">Minutes</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if videos %}
+<section>
+    <h2>Meeting Videos</h2>
+    {% for v in videos %}
+    <article>
+        <header>{{ v["title"] }} ({{ v["meeting_date"] }})</header>
+        <div class="video-embed">
+            <iframe src="https://www.youtube.com/embed/{{ v['video_id'] }}"
+                    title="{{ v['title'] }}"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen></iframe>
+        </div>
+    </article>
+    {% endfor %}
+</section>
+{% endif %}
+
+<section>
+    <a href="{{ url_for('alerts.subscribe') }}?project={{ project['project_id'] }}" role="button" class="outline">Subscribe to Updates</a>
+    <a href="{{ url_for('projects.project_list') }}" role="button" class="secondary outline">Back to Projects</a>
+</section>
+{% endblock %}

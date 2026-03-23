@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Search: {{ q }}{% endblock %}
+
+{% block content %}
+<h1>Search Results</h1>
+<form action="{{ url_for('home.search') }}" method="get" role="search">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search projects..." aria-label="Search projects">
+    <button type="submit">Search</button>
+</form>
+
+{% if q %}
+<p>{{ results|length }} result{{ "s" if results|length != 1 }} for &ldquo;{{ q }}&rdquo;</p>
+{% endif %}
+
+{% if results %}
+<div class="overflow-auto">
+    <table>
+        <thead><tr>
+            <th>Project</th><th>Borough</th><th>Agency</th><th>Stage</th><th>Result</th>
+        </tr></thead>
+        <tbody>
+        {% for r in results %}
+        <tr>
+            <td class="col-title"><a href="{{ url_for('projects.project_detail', project_id=r['project_id']) }}">{{ r["title"] }}</a></td>
+            <td>{{ r["borough"] or "" }}</td>
+            <td>{{ r["lead_agency"] or "" }}</td>
+            <td>{{ r["current_stage"] or "" }}</td>
+            <td>{{ r["final_result"] or "" }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% elif q %}
+<p>No projects found matching your search.</p>
+{% endif %}
+{% endblock %}

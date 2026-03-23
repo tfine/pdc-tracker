@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Projects{% endblock %}
+
+{% block content %}
+<h1>Projects <small>({{ "{:,}".format(total) }})</small></h1>
+
+<details>
+    <summary>Filter &amp; Sort</summary>
+    <form method="get" class="grid">
+        <select name="borough" aria-label="Borough">
+            <option value="">All Boroughs</option>
+            {% for b in boroughs %}<option value="{{ b }}" {{ "selected" if b == borough }}>{{ b }}</option>{% endfor %}
+        </select>
+        <select name="type" aria-label="Type">
+            <option value="">All Types</option>
+            {% for t in types %}<option value="{{ t }}" {{ "selected" if t == project_type }}>{{ t }}</option>{% endfor %}
+        </select>
+        <select name="stage" aria-label="Stage">
+            <option value="">All Stages</option>
+            {% for s in stages %}<option value="{{ s }}" {{ "selected" if s == stage }}>{{ s }}</option>{% endfor %}
+        </select>
+        <select name="result" aria-label="Result">
+            <option value="">All Results</option>
+            {% for r in results %}<option value="{{ r }}" {{ "selected" if r == result_filter }}>{{ r }}</option>{% endfor %}
+        </select>
+        <select name="sort" aria-label="Sort">
+            <option value="recent" {{ "selected" if sort == "recent" }}>Most Recent</option>
+            <option value="oldest" {{ "selected" if sort == "oldest" }}>Oldest First</option>
+            <option value="title" {{ "selected" if sort == "title" }}>Title A-Z</option>
+            <option value="borough" {{ "selected" if sort == "borough" }}>Borough</option>
+        </select>
+        <button type="submit">Apply</button>
+    </form>
+</details>
+
+<div class="overflow-auto">
+    <table>
+        <thead><tr>
+            <th>Project</th><th>Borough</th><th>Agency</th><th>Type</th><th>Stage</th><th>Result</th><th>Last Seen</th>
+        </tr></thead>
+        <tbody>
+        {% for p in projects %}
+        <tr>
+            <td class="col-title"><a href="{{ url_for('projects.project_detail', project_id=p['project_id']) }}">{{ p["title"] }}</a></td>
+            <td>{{ p["borough"] or "" }}</td>
+            <td>{{ p["lead_agency"] or "" }}</td>
+            <td>{{ p["project_type"] or "" }}</td>
+            <td>{{ p["current_stage"] or "" }}</td>
+            <td>{{ p["final_result"] or "" }}</td>
+            <td>{{ p["last_seen_date"] or "" }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if total_pages > 1 %}
+<nav class="pagination" aria-label="Pagination">
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}&borough={{ borough }}&type={{ project_type }}&stage={{ stage }}&result={{ result_filter }}&sort={{ sort }}" role="button" class="outline">Previous</a>
+    {% endif %}
+    <span>Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="?page={{ page + 1 }}&borough={{ borough }}&type={{ project_type }}&stage={{ stage }}&result={{ result_filter }}&sort={{ sort }}" role="button" class="outline">Next</a>
+    {% endif %}
+</nav>
+{% endif %}
+{% endblock %}

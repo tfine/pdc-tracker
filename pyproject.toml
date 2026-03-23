@@ -1,0 +1,33 @@
+[project]
+name = "pdc-tracker"
+version = "0.1.0"
+description = "NYC Public Design Commission item tracker and database"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx",
+    "pdfplumber",
+    "beautifulsoup4",
+    "lxml",
+    "rapidfuzz",
+    "click",
+    "rich",
+    "datasette",
+    "boto3",
+    "python-dotenv",
+    "yt-dlp",
+    "youtube-transcript-api",
+    "flask",
+    "gunicorn",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "resend",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "jupyter", "ipykernel"]
+
+[tool.setuptools.packages.find]
+include = ["pdc*"]
+
+[project.scripts]
+pdc = "pdc.cli:cli"

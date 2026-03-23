@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock %}
+
+{% block content %}
+<h1>About This Tool</h1>
+
+<section>
+    <h2>Washington Street Advocacy Group</h2>
+    <p>WSAG is a civic transparency initiative focused on making the NYC Public Design Commission's review process accessible, searchable, and accountable. We believe the public has a right to easily understand what's being built in their neighborhoods and how design review decisions are made.</p>
+</section>
+
+<section>
+    <h2>What Is the Public Design Commission?</h2>
+    <p>The <a href="https://www.nyc.gov/site/designcommission" target="_blank">NYC Public Design Commission</a> (PDC) reviews permanent works of architecture, landscape architecture, and art proposed on city-owned property. This includes parks, libraries, schools, firehouses, streetscapes, and public art. Projects go through up to three review stages:</p>
+    <ol>
+        <li><strong>Conceptual</strong> &mdash; early design direction and massing</li>
+        <li><strong>Preliminary</strong> &mdash; refined design with materials and details</li>
+        <li><strong>Final</strong> &mdash; construction-ready design for approval</li>
+    </ol>
+    <p>The Commission meets monthly (usually on a Monday) and publishes agendas approximately one week before each meeting.</p>
+</section>
+
+<section>
+    <h2>How This Tracker Works</h2>
+    <p>This tool automatically collects data from multiple public sources:</p>
+    <ul>
+        <li><strong>NYC Open Data APIs</strong> &mdash; Monthly Design Review and Annual Report datasets via Socrata</li>
+        <li><strong>PDC Website</strong> &mdash; Agenda PDFs, scraped and parsed for item-level detail</li>
+        <li><strong>YouTube</strong> &mdash; Meeting recordings from the <a href="https://www.youtube.com/@nycdesigncommission" target="_blank">NYC Design Commission channel</a>, with auto-generated transcripts</li>
+        <li><strong>Announcements</strong> &mdash; News from the PDC website, matched to project records</li>
+    </ul>
+    <p>Data is synchronized weekly and cross-referenced to build a complete picture of each project's journey through the review pipeline.</p>
+</section>
+
+<section>
+    <h2>Data Accuracy</h2>
+    <p>While we strive for accuracy, this is an automated tool that parses public data. Discrepancies between data sources are expected and documented. For official information, always refer to the <a href="https://www.nyc.gov/site/designcommission" target="_blank">PDC website</a>.</p>
+</section>
+
+<section>
+    <h2>Contact</h2>
+    <p>Questions, corrections, or suggestions? Reach us at <a href="mailto:info@washingtonstreet.group">info@washingtonstreet.group</a>.</p>
+</section>
+{% endblock %}

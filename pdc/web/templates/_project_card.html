@@ -1,0 +1,16 @@
+{# Project card partial — expects `p` dict with project fields #}
+<article class="project-card">
+    <header>
+        <a href="{{ url_for('projects.project_detail', project_id=p['project_id']) }}">
+            {{ p["title"][:80] }}{% if p["title"]|length > 80 %}&hellip;{% endif %}
+        </a>
+    </header>
+    <p>
+        {{ p["borough"] or "" }}
+        {% if p["lead_agency"] %} &middot; {{ p["lead_agency"] }}{% endif %}
+        {% if p["current_stage"] %} &middot; {{ p["current_stage"] }}{% endif %}
+    </p>
+    {% if p["final_result"] %}
+    <footer><strong>{{ p["final_result"] }}</strong></footer>
+    {% endif %}
+</article>

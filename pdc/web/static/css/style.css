@@ -1,0 +1,141 @@
+/* WSAG PDC Tracker — Pico CSS overrides & custom styles */
+
+:root {
+    --wsag-blue: #1a3a5c;
+    --wsag-gold: #c5973a;
+    --wsag-light: #f4f1eb;
+    --pico-primary: var(--wsag-blue);
+    --pico-primary-hover: #24506e;
+}
+
+/* Brand link */
+.brand {
+    text-decoration: none;
+    color: var(--wsag-blue);
+}
+
+/* Hero section */
+.hero {
+    text-align: center;
+    padding: 2rem 0 1rem;
+}
+.hero hgroup h1 {
+    margin-bottom: 0.25rem;
+}
+
+/* Stats cards */
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--wsag-blue);
+    text-align: center;
+    margin: 0;
+}
+
+/* Stage timeline stepper */
+.stage-stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 1rem 0;
+}
+.stage-step {
+    text-align: center;
+    flex: 0 0 auto;
+}
+.stage-dot {
+    width: 1.2rem;
+    height: 1.2rem;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    background: #fff;
+    margin: 0 auto 0.3rem;
+}
+.stage-step.completed .stage-dot {
+    background: var(--wsag-blue);
+    border-color: var(--wsag-blue);
+}
+.stage-connector {
+    flex: 1;
+    height: 2px;
+    background: #ccc;
+    margin-bottom: 1.8rem;
+}
+.stage-connector.completed {
+    background: var(--wsag-blue);
+}
+.stage-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.stage-date {
+    font-size: 0.75rem;
+    color: #666;
+}
+
+/* Video embed responsive */
+.video-embed {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    max-width: 100%;
+    margin: 1rem 0;
+}
+.video-embed iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Flash messages */
+[role="alert"] {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+.flash-success { background: #d4edda; color: #155724; }
+.flash-error   { background: #f8d7da; color: #721c24; }
+.flash-warning { background: #fff3cd; color: #856404; }
+
+/* Pagination */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+/* Tables */
+.overflow-auto {
+    overflow-x: auto;
+}
+table td, table th {
+    white-space: nowrap;
+}
+table td.col-title {
+    white-space: normal;
+    min-width: 20rem;
+    max-width: 36rem;
+}
+table td.col-snippet {
+    white-space: normal;
+    min-width: 16rem;
+}
+
+/* Project card */
+.project-card header a {
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* Search results highlight */
+mark {
+    background: var(--wsag-gold);
+    color: inherit;
+    padding: 0 2px;
+    border-radius: 2px;
+}

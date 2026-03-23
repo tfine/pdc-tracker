@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Subscribe to Alerts{% endblock %}
+
+{% block content %}
+<h1>Email Alerts</h1>
+<p>Get notified when PDC agenda items advance through the review pipeline.</p>
+
+<form method="post" action="{{ url_for('alerts.subscribe') }}">
+    <label for="email">Email Address</label>
+    <input type="email" id="email" name="email" placeholder="you@example.com" required>
+
+    <label for="type">What to Watch</label>
+    <select id="type" name="type">
+        <option value="all_meetings">All Meetings (new agendas)</option>
+        <option value="borough">Specific Borough</option>
+        <option value="project">Specific Project</option>
+    </select>
+
+    <div id="filter-borough" style="display:none">
+        <label for="filter-borough-select">Borough</label>
+        <select id="filter-borough-select" name="filter_value">
+            <option value="">Select...</option>
+            {% for b in boroughs %}
+            <option value="{{ b }}">{{ b }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div id="filter-project" style="display:none">
+        <label for="filter-project-input">Project ID</label>
+        <input type="text" id="filter-project-input" name="filter_value" placeholder="e.g., 12345">
+    </div>
+
+    <button type="submit">Subscribe</button>
+</form>
+
+<script>
+document.getElementById("type").addEventListener("change", function() {
+    document.getElementById("filter-borough").style.display = this.value === "borough" ? "" : "none";
+    document.getElementById("filter-project").style.display = this.value === "project" ? "" : "none";
+    // Disable unused filter inputs so they don't submit
+    document.getElementById("filter-borough-select").disabled = this.value !== "borough";
+    document.getElementById("filter-project-input").disabled = this.value !== "project";
+});
+// Initialize
+document.getElementById("filter-borough-select").disabled = true;
+document.getElementById("filter-project-input").disabled = true;
+</script>
+{% endblock %}

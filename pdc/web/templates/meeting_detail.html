@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Meeting {{ meeting["meeting_date"] }}{% endblock %}
+
+{% block content %}
+<hgroup>
+    <h1>PDC Meeting &mdash; {{ meeting["meeting_date"] }}</h1>
+    <p>
+        {% if meeting["agenda_pdf_url"] %}<a href="{{ meeting['agenda_pdf_url'] }}" target="_blank">Agenda PDF</a> &middot; {% endif %}
+        {% if meeting["minutes_pdf_url"] %}<a href="{{ cdn }}/minutes/{{ meeting['minutes_pdf_url'].split('/')[-1] }}" target="_blank">Minutes &amp; Certificates</a> &middot; {% endif %}
+        {% if meeting["youtube_url"] %}<a href="{{ meeting['youtube_url'] }}" target="_blank">YouTube</a> &middot; {% endif %}
+        {{ items|length }} item{{ "s" if items|length != 1 }}
+    </p>
+</hgroup>
+
+{% if video %}
+<section>
+    <div class="video-embed">
+        <iframe src="https://www.youtube.com/embed/{{ video['video_id'] }}"
+                title="{{ video['title'] }}"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+    </div>
+</section>
+{% endif %}
+
+<section>
+    <h2>Agenda Items</h2>
+    <div class="overflow-auto">
+        <table>
+            <thead><tr>
+                <th>Project</th><th>Borough</th><th>Agency</th><th>Stage</th><th>Result</th><th>Section</th><th>Documents</th>
+            </tr></thead>
+            <tbody>
+            {% for item in items %}
+            <tr>
+                <td class="col-title"><a href="{{ url_for('projects.project_detail', project_id=item['project_id']) }}">{{ item["title"] }}</a></td>
+                <td>{{ item["borough"] or "" }}</td>
+                <td>{{ item["lead_agency"] or "" }}</td>
+                <td>{{ item["level_of_review"] or "" }}</td>
+                <td>{{ item["result"] or "" }}</td>
+                <td>{{ item["agenda_section"] or "" }}</td>
+                <td>
+                    {% if meeting["agenda_pdf_url"] %}
+                    <a href="{{ cdn }}/agendas/{{ meeting['agenda_pdf_url'].split('/')[-1] }}" target="_blank">Agenda</a><br>
+                    {% endif %}
+                    {% if meeting["minutes_pdf_url"] %}
+                    <a href="{{ cdn }}/minutes/{{ meeting['minutes_pdf_url'].split('/')[-1] }}" target="_blank">Minutes</a><br>
+                    {% endif %}
+                    {% if item["presentation_url"] %}
+                    <a href="{{ cdn }}/presentations/{{ item['presentation_url'].split('/')[-1] }}" target="_blank">Presentation</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<a href="{{ url_for('meetings.meeting_list') }}" role="button" class="secondary outline">Back to Meetings</a>
+{% endblock %}

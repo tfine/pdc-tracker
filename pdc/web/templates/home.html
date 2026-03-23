@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <hgroup>
+        <h1>NYC Public Design Commission Tracker</h1>
+        <p>Washington Street Advocacy Group &mdash; Monitoring PDC agenda items, tracking pipeline progress, and searching meeting transcripts.</p>
+    </hgroup>
+
+    <form action="{{ url_for('home.search') }}" method="get" role="search">
+        <input type="search" name="q" placeholder="Search projects by title, address, or agency..." aria-label="Search projects">
+        <button type="submit">Search</button>
+    </form>
+</section>
+
+<div class="grid">
+    <article>
+        <header>Projects Tracked</header>
+        <p class="stat-number">{{ "{:,}".format(project_count) }}</p>
+    </article>
+    <article>
+        <header>Meetings on Record</header>
+        <p class="stat-number">{{ "{:,}".format(meeting_count) }}</p>
+    </article>
+    <article>
+        <header>Projects Approved</header>
+        <p class="stat-number">{{ "{:,}".format(approved_count) }}</p>
+    </article>
+</div>
+
+{% if upcoming %}
+<section>
+    <h2>Upcoming Meetings</h2>
+    <div class="overflow-auto">
+        <table>
+            <thead><tr>
+                <th>Date</th><th>Items</th><th>Links</th>
+            </tr></thead>
+            <tbody>
+            {% for m in upcoming %}
+            <tr>
+                <td><a href="{{ url_for('meetings.meeting_detail', meeting_date=m['meeting_date']) }}">{{ m["meeting_date"] }}</a></td>
+                <td>{{ m["item_count"] }}</td>
+                <td>
+                    {% if m["agenda_pdf_url"] %}<a href="{{ m['agenda_pdf_url'] }}" target="_blank">Agenda</a>{% endif %}
+                    {% if m["youtube_url"] %} <a href="{{ m['youtube_url'] }}" target="_blank">Video</a>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<section>
+    <h2>Recent Activity</h2>
+    <div class="overflow-auto">
+        <table>
+            <thead><tr>
+                <th>Date</th><th>Project</th><th>Borough</th><th>Stage</th><th>Result</th>
+            </tr></thead>
+            <tbody>
+            {% for r in recent %}
+            <tr>
+                <td>{{ r["meeting_date"] }}</td>
+                <td class="col-title"><a href="{{ url_for('projects.project_detail', project_id=r['project_id']) }}">{{ r["title"] }}</a></td>
+                <td>{{ r["borough"] or "" }}</td>
+                <td>{{ r["level_of_review"] or "" }}</td>
+                <td>{{ r["result"] or "" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
