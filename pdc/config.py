@@ -20,7 +20,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
 
 # Email alerts via Resend
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-ALERT_FROM_EMAIL = os.getenv("ALERT_FROM_EMAIL", "alerts@washingtonstreet.group")
+ALERT_FROM_EMAIL = os.getenv("ALERT_FROM_EMAIL", "tfine@washingtonstreet.group")
 
 # DigitalOcean Spaces CDN
 DO_SPACES_CDN = os.getenv(
