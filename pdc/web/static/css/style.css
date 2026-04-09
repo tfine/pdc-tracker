@@ -139,3 +139,15 @@ mark {
     padding: 0 2px;
     border-radius: 2px;
 }
+
+/* Continuation banner on project detail page */
+.banner-continuation {
+    background: #fff8e1;
+    border-left: 4px solid var(--wsag-gold);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+}
+.banner-continuation a {
+    font-weight: 600;
+}

@@ -3,13 +3,24 @@
 {% block title %}{{ project["title"][:60] }}{% endblock %}
 
 {% block content %}
+{% if latest_sibling %}
+<article class="banner-continuation">
+    <strong>Note:</strong> This project continued at a later review on
+    {{ latest_sibling["last_seen_date"] }}.
+    <a href="{{ url_for('projects.project_detail', project_id=latest_sibling['project_id']) }}">
+        See the most recent record &rarr;
+    </a>
+</article>
+{% endif %}
+
 <hgroup>
     <h1>{{ project["title"] }}</h1>
     <p>
         {{ project["borough"] or "Unknown Borough" }} &middot;
         {{ project["lead_agency"] or "Unknown Agency" }} &middot;
         {{ project["project_type"] or "" }}
-        {% if project["final_result"] %} &middot; <strong>{{ project["final_result"] }}</strong>{% endif %}
+        {% if effective_stage %} &middot; {{ effective_stage }}{% endif %}
+        {% if effective_result %} &middot; <strong>{{ effective_result }}</strong>{% endif %}
     </p>
 </hgroup>
 

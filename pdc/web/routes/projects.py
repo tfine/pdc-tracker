@@ -200,6 +200,40 @@ def project_detail(project_id):
                 "final_result": final_result,
             }
 
+        # Compute "effective" stage/result from the merged timeline (for header)
+        # and find the latest sibling (for banner pointing to the newer record)
+        effective_stage = None
+        effective_result = project["final_result"]
+        latest_sibling = None
+
+        if timeline:
+            if timeline["final_date"] or timeline["preliminary_and_final_date"]:
+                effective_stage = "Final"
+            elif timeline["preliminary_date"]:
+                effective_stage = "Preliminary"
+            elif timeline["conceptual_date"]:
+                effective_stage = "Conceptual"
+            if timeline.get("final_result") if isinstance(timeline, dict) else timeline["final_result"]:
+                effective_result = timeline["final_result"]
+
+        if len(sibling_ids) > 0:
+            # Find the sibling with the most recent last_seen_date
+            sibling_id_list = [r["sibling_id"] for r in sibling_ids]
+            placeholders = ",".join("?" for _ in sibling_id_list)
+            siblings = conn.execute(
+                f"""SELECT project_id, title, current_stage, final_result,
+                           first_seen_date, last_seen_date
+                    FROM projects WHERE project_id IN ({placeholders})
+                    ORDER BY last_seen_date DESC NULLS LAST""",
+                tuple(sibling_id_list),
+            ).fetchall()
+            if siblings:
+                candidate = siblings[0]
+                # Only show banner if the current project isn't already the latest
+                current_last_seen = project["last_seen_date"] or ""
+                if (candidate["last_seen_date"] or "") > current_last_seen:
+                    latest_sibling = candidate
+
         # Get YouTube videos for meetings this project appeared at
         meeting_dates = list({e["meeting_date"] for e in events})
         videos = []
@@ -262,5 +296,8 @@ def project_detail(project_id):
         presentations=presentations,
         minutes_by_date=minutes_by_date,
         related=related,
+        effective_stage=effective_stage,
+        effective_result=effective_result,
+        latest_sibling=latest_sibling,
         stage_order=STAGE_ORDER,
     )
