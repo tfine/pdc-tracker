@@ -170,6 +170,17 @@ CREATE TABLE IF NOT EXISTS alert_log (
     sent_at             TEXT DEFAULT (datetime('now'))
 );
 
+-- Project links: relationships between projects
+CREATE TABLE IF NOT EXISTS project_links (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id_a        TEXT NOT NULL REFERENCES projects(project_id),
+    project_id_b        TEXT NOT NULL REFERENCES projects(project_id),
+    link_type           TEXT NOT NULL,  -- 'same_project', 'same_site', 'modification'
+    confidence          REAL DEFAULT 1.0,
+    created_at          TEXT DEFAULT (datetime('now')),
+    UNIQUE(project_id_a, project_id_b, link_type)
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_review_events_project ON review_events(project_id);
 CREATE INDEX IF NOT EXISTS idx_review_events_date ON review_events(meeting_date);
@@ -180,6 +191,8 @@ CREATE INDEX IF NOT EXISTS idx_projects_stage ON projects(current_stage);
 CREATE INDEX IF NOT EXISTS idx_public_art_pdc ON public_art(pdc_records);
 CREATE INDEX IF NOT EXISTS idx_announcements_project ON announcements(matched_project_id);
 CREATE INDEX IF NOT EXISTS idx_youtube_meeting ON youtube_videos(meeting_date);
+CREATE INDEX IF NOT EXISTS idx_project_links_a ON project_links(project_id_a);
+CREATE INDEX IF NOT EXISTS idx_project_links_b ON project_links(project_id_b);
 
 -- Stage progression view
 CREATE VIEW IF NOT EXISTS project_stage_timeline AS
@@ -381,6 +394,16 @@ CREATE TABLE IF NOT EXISTS alert_log (
     sent_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS project_links (
+    id                  SERIAL PRIMARY KEY,
+    project_id_a        TEXT NOT NULL REFERENCES projects(project_id),
+    project_id_b        TEXT NOT NULL REFERENCES projects(project_id),
+    link_type           TEXT NOT NULL,
+    confidence          DOUBLE PRECISION DEFAULT 1.0,
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(project_id_a, project_id_b, link_type)
+);
+
 CREATE INDEX IF NOT EXISTS idx_review_events_project ON review_events(project_id);
 CREATE INDEX IF NOT EXISTS idx_review_events_date ON review_events(meeting_date);
 CREATE INDEX IF NOT EXISTS idx_review_events_cert ON review_events(certificate_number);
@@ -390,6 +413,8 @@ CREATE INDEX IF NOT EXISTS idx_projects_stage ON projects(current_stage);
 CREATE INDEX IF NOT EXISTS idx_public_art_pdc ON public_art(pdc_records);
 CREATE INDEX IF NOT EXISTS idx_announcements_project ON announcements(matched_project_id);
 CREATE INDEX IF NOT EXISTS idx_youtube_meeting ON youtube_videos(meeting_date);
+CREATE INDEX IF NOT EXISTS idx_project_links_a ON project_links(project_id_a);
+CREATE INDEX IF NOT EXISTS idx_project_links_b ON project_links(project_id_b);
 """
 
 _VIEW_PG = """

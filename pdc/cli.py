@@ -70,6 +70,11 @@ def sync(full):
         yt_result = sync_youtube(conn)
         console.print(f"  {yt_result['videos_found']} videos found, {yt_result['inserted']} new, {yt_result['transcripts_fetched']} transcripts")
 
+        console.print("[bold]Building project links...[/bold]")
+        from pdc.transform.linker import build_project_links
+        link_result = build_project_links(conn)
+        console.print(f"  {link_result['total']} links ({link_result['same_project']} same-project, {link_result['modification']} modifications, {link_result['same_site']} same-site)")
+
         total = sum(r["fetched"] for r in api_results)
         conn.execute(
             """UPDATE sync_log SET completed_at = datetime('now'),
@@ -268,6 +273,20 @@ def stalled(days):
         )
 
     console.print(table)
+
+
+@cli.command()
+def link():
+    """Build links between related projects."""
+    from pdc.transform.linker import build_project_links
+
+    with get_db() as conn:
+        console.print("[bold]Building project links...[/bold]")
+        result = build_project_links(conn)
+        console.print(f"  Same project (different stages): {result['same_project']} pairs")
+        console.print(f"  Modifications linked to originals: {result['modification']} pairs")
+        console.print(f"  Same site: {result['same_site']} pairs")
+        console.print(f"  [bold green]Total: {result['total']} links[/bold green]")
 
 
 if __name__ == "__main__":

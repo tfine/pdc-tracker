@@ -1,4 +1,6 @@
 {# Stage progression timeline component — expects `timeline` row from project_stage_timeline view #}
+{% set result = timeline["final_result"] or project["final_result"] %}
+{% set negative = result in ("Rejected", "Withdrawn", "Found incomplete", "Found Incomplete") %}
 <div class="timeline-stages">
     <h3>Stage Progression</h3>
     <div class="stage-stepper">
@@ -34,6 +36,9 @@
     <small>Conceptual → Preliminary: {{ timeline["days_conceptual_to_preliminary"] }} days</small><br>
     {% endif %}
     {% if timeline["days_preliminary_to_final"] %}
-    <small>Preliminary → Final: {{ timeline["days_preliminary_to_final"] }} days</small>
+    <small>Preliminary → Final: {{ timeline["days_preliminary_to_final"] }} days</small><br>
+    {% endif %}
+    {% if result and result != "Approved" %}
+    <small><strong>Result: {{ result }}</strong></small>
     {% endif %}
 </div>

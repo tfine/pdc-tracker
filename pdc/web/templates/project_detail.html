@@ -83,6 +83,82 @@
 </section>
 {% endif %}
 
+{% if related %}
+<section>
+    <h2>Related Projects</h2>
+    {% set ns = namespace(same=[], mods=[], site=[]) %}
+    {% for r in related %}
+        {% if r["link_type"] == "same_project" %}
+            {% set ns.same = ns.same + [r] %}
+        {% elif r["link_type"] == "modification" %}
+            {% set ns.mods = ns.mods + [r] %}
+        {% else %}
+            {% set ns.site = ns.site + [r] %}
+        {% endif %}
+    {% endfor %}
+
+    {% if ns.same %}
+    <details open>
+        <summary>Same project, different review stage ({{ ns.same|length }})</summary>
+        <table>
+            <thead><tr><th>Title</th><th>Stage</th><th>First Seen</th><th>Last Seen</th></tr></thead>
+            <tbody>
+            {% for r in ns.same %}
+            <tr>
+                <td><a href="{{ url_for('projects.project_detail', project_id=r['project_id']) }}">{{ r["title"][:80] }}{% if r["title"]|length > 80 %}&hellip;{% endif %}</a></td>
+                <td>{{ r["current_stage"] or "" }}</td>
+                <td>{{ r["first_seen_date"] or "" }}</td>
+                <td>{{ r["last_seen_date"] or "" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </details>
+    {% endif %}
+
+    {% if ns.mods %}
+    <details open>
+        <summary>Modifications ({{ ns.mods|length }})</summary>
+        <table>
+            <thead><tr><th>Title</th><th>Stage</th><th>First Seen</th><th>Result</th></tr></thead>
+            <tbody>
+            {% for r in ns.mods %}
+            <tr>
+                <td><a href="{{ url_for('projects.project_detail', project_id=r['project_id']) }}">{{ r["title"][:80] }}{% if r["title"]|length > 80 %}&hellip;{% endif %}</a></td>
+                <td>{{ r["current_stage"] or "" }}</td>
+                <td>{{ r["first_seen_date"] or "" }}</td>
+                <td>{{ r["final_result"] or "" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </details>
+    {% endif %}
+
+    {% if ns.site %}
+    <details{% if not ns.same and not ns.mods %} open{% endif %}>
+        <summary>Other projects at this site ({{ ns.site|length }})</summary>
+        <table>
+            <thead><tr><th>Title</th><th>Stage</th><th>Agency</th><th>First Seen</th></tr></thead>
+            <tbody>
+            {% for r in ns.site[:20] %}
+            <tr>
+                <td><a href="{{ url_for('projects.project_detail', project_id=r['project_id']) }}">{{ r["title"][:80] }}{% if r["title"]|length > 80 %}&hellip;{% endif %}</a></td>
+                <td>{{ r["current_stage"] or "" }}</td>
+                <td>{{ r["lead_agency"] or "" }}</td>
+                <td>{{ r["first_seen_date"] or "" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% if ns.site|length > 20 %}
+        <p><small>Showing 20 of {{ ns.site|length }} related projects at this site.</small></p>
+        {% endif %}
+    </details>
+    {% endif %}
+</section>
+{% endif %}
+
 <section>
     <a href="{{ url_for('alerts.subscribe') }}?project={{ project['project_id'] }}" role="button" class="outline">Subscribe to Updates</a>
     <a href="{{ url_for('projects.project_list') }}" role="button" class="secondary outline">Back to Projects</a>

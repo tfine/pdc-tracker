@@ -120,11 +120,85 @@ def project_detail(project_id):
             (project_id,),
         ).fetchall()
 
-        # Get timeline dates from view
-        timeline = conn.execute(
-            "SELECT * FROM project_stage_timeline WHERE project_id = ?",
-            (project_id,),
-        ).fetchone()
+        # Get timeline: merge stages from same_project siblings
+        # so e.g. Conceptual from project A + Preliminary from project B
+        # shows the full progression on both pages
+        sibling_ids = conn.execute(
+            """SELECT CASE WHEN project_id_a = ? THEN project_id_b
+                          ELSE project_id_a END AS sibling_id
+               FROM project_links
+               WHERE link_type = 'same_project'
+                 AND (project_id_a = ? OR project_id_b = ?)""",
+            (project_id, project_id, project_id),
+        ).fetchall()
+        all_ids = [project_id] + [r["sibling_id"] for r in sibling_ids]
+
+        if len(all_ids) == 1:
+            timeline = conn.execute(
+                "SELECT * FROM project_stage_timeline WHERE project_id = ?",
+                (project_id,),
+            ).fetchone()
+        else:
+            # Build merged timeline from all siblings' review events
+            placeholders = ",".join("?" for _ in all_ids)
+            timelines = conn.execute(
+                f"SELECT * FROM project_stage_timeline WHERE project_id IN ({placeholders})",
+                tuple(all_ids),
+            ).fetchall()
+
+            # Merge: take the earliest non-null date for each stage
+            def earliest(*dates):
+                valid = [d for d in dates if d]
+                return min(valid) if valid else None
+
+            conceptual = earliest(*(t["conceptual_date"] for t in timelines))
+            preliminary = earliest(*(t["preliminary_date"] for t in timelines))
+            pf = earliest(*(t["preliminary_and_final_date"] for t in timelines))
+            final = earliest(*(t["final_date"] for t in timelines))
+
+            # Compute days between stages
+            days_c_to_p = None
+            days_p_to_f = None
+            if conceptual and (preliminary or pf):
+                from datetime import date as dt_date
+                c = dt_date.fromisoformat(conceptual)
+                p = dt_date.fromisoformat(preliminary or pf)
+                days_c_to_p = (p - c).days
+            if (preliminary or pf) and final:
+                from datetime import date as dt_date
+                p = dt_date.fromisoformat(preliminary or pf)
+                f = dt_date.fromisoformat(final)
+                days_p_to_f = (f - p).days
+
+            total_meetings = sum(t["total_meetings"] for t in timelines)
+
+            # Pick the most authoritative final_result:
+            # Prefer approval-type results over non-approvals,
+            # and later results over earlier ones
+            _result_priority = {
+                "Approved": 0, "Approved with conditions": 1,
+                "Approved per delegation": 2, "Commented": 3,
+                "Found incomplete": 4, "Found Incomplete": 4,
+                "Withdrawn": 5, "Rejected": 6,
+            }
+            final_result = None
+            best_prio = 99
+            for t in timelines:
+                r = t["final_result"]
+                if r and _result_priority.get(r, 10) < best_prio:
+                    best_prio = _result_priority[r]
+                    final_result = r
+
+            timeline = {
+                "conceptual_date": conceptual,
+                "preliminary_date": preliminary,
+                "preliminary_and_final_date": pf,
+                "final_date": final,
+                "days_conceptual_to_preliminary": days_c_to_p,
+                "days_preliminary_to_final": days_p_to_f,
+                "total_meetings": total_meetings,
+                "final_result": final_result,
+            }
 
         # Get YouTube videos for meetings this project appeared at
         meeting_dates = list({e["meeting_date"] for e in events})
@@ -152,6 +226,33 @@ def project_detail(project_id):
             if m and m["minutes_pdf_url"]:
                 minutes_by_date[md] = m["minutes_pdf_url"]
 
+        # Get related projects (deduplicated: prefer most specific link type)
+        related_raw = conn.execute(
+            """SELECT p.project_id, p.title, p.current_stage, p.final_result,
+                      p.first_seen_date, p.last_seen_date, p.lead_agency,
+                      pl.link_type, pl.confidence
+               FROM project_links pl
+               JOIN projects p ON p.project_id = CASE
+                   WHEN pl.project_id_a = ? THEN pl.project_id_b
+                   ELSE pl.project_id_a END
+               WHERE pl.project_id_a = ? OR pl.project_id_b = ?
+               ORDER BY pl.link_type, p.first_seen_date""",
+            (project_id, project_id, project_id),
+        ).fetchall()
+
+        # Deduplicate: keep the most specific link type per project
+        # Priority: same_project > modification > same_site
+        link_priority = {"same_project": 0, "modification": 1, "same_site": 2}
+        best_by_pid = {}
+        for r in related_raw:
+            pid = r["project_id"]
+            prio = link_priority.get(r["link_type"], 9)
+            if pid not in best_by_pid or prio < best_by_pid[pid][0]:
+                best_by_pid[pid] = (prio, r)
+        related = [v[1] for v in sorted(
+            best_by_pid.values(), key=lambda x: (x[0], x[1]["first_seen_date"] or "")
+        )]
+
     return render_template(
         "project_detail.html",
         project=project,
@@ -160,5 +261,6 @@ def project_detail(project_id):
         videos=videos,
         presentations=presentations,
         minutes_by_date=minutes_by_date,
+        related=related,
         stage_order=STAGE_ORDER,
     )
