@@ -203,10 +203,34 @@ def sync_annual_report(conn: sqlite3.Connection, full: bool = False) -> dict:
             "inserted": inserted, "updated": updated}
 
 
+def _clean(val):
+    """Normalize Socrata text values: literal 'NULL' and empty → None."""
+    if val is None:
+        return None
+    s = str(val).strip()
+    if not s or s.upper() == "NULL":
+        return None
+    return s
+
+
+def _parse_coord(val):
+    """Parse a lat/long that may carry stray characters (e.g. '40.814761,').
+
+    SQLite silently stored such junk as text; PostgreSQL rejects it.
+    """
+    if val is None:
+        return None
+    try:
+        return float(str(val).strip().rstrip(","))
+    except ValueError:
+        return None
+
+
 def sync_art_inventory(conn: sqlite3.Connection) -> dict:
     """Fetch Public Art Inventory data."""
     records = fetch_all(ENDPOINTS["art_inventory"])
     inserted = 0
+    skipped = 0
 
     for rec in records:
         title = rec.get("title", "").strip()
@@ -216,6 +240,17 @@ def sync_art_inventory(conn: sqlite3.Connection) -> dict:
         # Build artist name from parts
         artist_parts = [rec.get("last_name_1", ""), rec.get("first_name_1", "")]
         primary_artist = ", ".join(p for p in artist_parts if p).strip()
+
+        # public_art has no natural unique constraint, so INSERT OR IGNORE
+        # never ignores anything — without this check every sync re-inserts
+        # the full inventory.
+        existing = conn.execute(
+            "SELECT id FROM public_art WHERE title = ? AND COALESCE(address, '') = ?",
+            (title, _clean(rec.get("address")) or ""),
+        ).fetchone()
+        if existing:
+            skipped += 1
+            continue
 
         conn.execute(
             """INSERT OR IGNORE INTO public_art
@@ -228,23 +263,25 @@ def sync_art_inventory(conn: sqlite3.Connection) -> dict:
                  subject_keyword, inscription, managing_agency,
                  acquisition, pdc_records)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (title, rec.get("alternate_title"), primary_artist,
-             rec.get("architect_1"), rec.get("architecture_firm"),
-             rec.get("foundry"), rec.get("fabricator"),
-             rec.get("date_created"), rec.get("date_dedicated"),
-             rec.get("artwork_type1"), rec.get("artwork_type2"),
-             rec.get("material"),
-             rec.get("location_name"), rec.get("address"), rec.get("borough"),
-             rec.get("latitude"), rec.get("longitude"),
-             rec.get("block"), rec.get("lot"),
-             rec.get("subject_keyword"), rec.get("inscription"),
-             rec.get("managing_city_agency"), rec.get("acquisition"),
-             rec.get("pdc_records")),
+            (title, _clean(rec.get("alternate_title")), primary_artist,
+             _clean(rec.get("architect_1")), _clean(rec.get("architecture_firm")),
+             _clean(rec.get("foundry")), _clean(rec.get("fabricator")),
+             _clean(rec.get("date_created")), _clean(rec.get("date_dedicated")),
+             _clean(rec.get("artwork_type1")), _clean(rec.get("artwork_type2")),
+             _clean(rec.get("material")),
+             _clean(rec.get("location_name")), _clean(rec.get("address")),
+             _clean(rec.get("borough")),
+             _parse_coord(rec.get("latitude")), _parse_coord(rec.get("longitude")),
+             _clean(rec.get("block")), _clean(rec.get("lot")),
+             _clean(rec.get("subject_keyword")), _clean(rec.get("inscription")),
+             _clean(rec.get("managing_city_agency")), _clean(rec.get("acquisition")),
+             _clean(rec.get("pdc_records"))),
         )
         inserted += 1
 
     conn.commit()
-    return {"source": "art_inventory", "fetched": len(records), "inserted": inserted}
+    return {"source": "art_inventory", "fetched": len(records),
+            "inserted": inserted, "skipped": skipped}
 
 
 def sync_all(conn: sqlite3.Connection, full: bool = False) -> list[dict]:
