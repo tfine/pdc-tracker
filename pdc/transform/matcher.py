@@ -94,5 +94,20 @@ def _reassign_project(conn: sqlite3.Connection, old_id: str, new_id: str):
             WHERE project_id = ?""",
             (old_proj["cc_district"], old_proj["community_board"], new_id),
         )
+    # Re-point or clear every other table referencing the placeholder before
+    # deleting it, or the DELETE fails on foreign keys. Links are derived
+    # data rebuilt by build_project_links after matching, so drop them.
+    conn.execute(
+        "DELETE FROM project_links WHERE project_id_a = ? OR project_id_b = ?",
+        (old_id, old_id),
+    )
+    conn.execute(
+        "UPDATE announcements SET matched_project_id = ? WHERE matched_project_id = ?",
+        (new_id, old_id),
+    )
+    conn.execute(
+        "UPDATE public_art SET project_id = ? WHERE project_id = ?",
+        (new_id, old_id),
+    )
     # Remove placeholder project
     conn.execute("DELETE FROM projects WHERE project_id = ?", (old_id,))
