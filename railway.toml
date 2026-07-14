@@ -2,10 +2,12 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "gunicorn 'pdc.web:create_app()' --bind 0.0.0.0:$PORT --workers 2"
-healthcheckPath = "/"
-restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3
+startCommand = "gunicorn 'pdc.web:create_app()' --bind 0.0.0.0:$PORT --workers 2 --worker-class gthread --threads 4 --timeout 60 --graceful-timeout 30 --keep-alive 5 --max-requests 1000 --max-requests-jitter 100 --access-logfile - --error-logfile - --log-level info"
+healthcheckPath = "/healthz"
+healthcheckTimeout = 120
+# Always restart, no retry cap: the previous on_failure/3-retries policy
+# meant Railway gave up after 3 crashes and left the site down.
+restartPolicyType = "always"
 
 # Check for new agendas/minutes every 2 hours
 [[cron]]

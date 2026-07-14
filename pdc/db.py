@@ -1,6 +1,7 @@
 import os
 import re
 import sqlite3
+import threading
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -602,18 +603,28 @@ class _DictRow:
 class _PgCursorResult:
     """Wraps a SQLAlchemy CursorResult to expose fetchone/fetchall/_DictRow."""
 
-    def __init__(self, sa_result, sa_conn):
+    def __init__(self, sa_result, sa_conn, wants_lastrowid=False):
         self._result = sa_result
         self._lastrowid = None
-        # Attempt to retrieve lastrowid via lastval()
-        if sa_result.returns_rows is False:
+        # Retrieve lastrowid via lastval(), but only for INSERTs and inside
+        # a SAVEPOINT: lastval() raises if no sequence has been used on this
+        # session yet, and a bare error would abort the whole transaction
+        # (silently rolling back the caller's writes on commit).
+        if wants_lastrowid and sa_result.returns_rows is False:
+            from sqlalchemy import text as _t
+            nested = None
             try:
-                from sqlalchemy import text as _t
+                nested = sa_conn.begin_nested()
                 row = sa_conn.execute(_t("SELECT lastval()")).fetchone()
+                nested.commit()
                 if row:
                     self._lastrowid = row[0]
             except Exception:
-                pass
+                if nested is not None:
+                    try:
+                        nested.rollback()
+                    except Exception:
+                        pass
 
     @property
     def lastrowid(self):
@@ -643,8 +654,9 @@ class _PgConnection:
         from sqlalchemy import text
         sql = _translate_sql(sql)
         sql, param_dict = _positional_to_named(sql, params)
+        wants_lastrowid = sql.lstrip()[:6].upper() == "INSERT"
         result = self._conn.execute(text(sql), param_dict or {})
-        return _PgCursorResult(result, self._conn)
+        return _PgCursorResult(result, self._conn, wants_lastrowid)
 
     def executescript(self, sql):
         from sqlalchemy import text
@@ -693,13 +705,35 @@ class _SqliteConnection:
 
 
 _engine = None
+_schema_ready = False
+_schema_lock = threading.Lock()
+
+# Arbitrary app-wide key for pg_advisory_xact_lock, so concurrent processes
+# (gunicorn workers, cron jobs) serialize schema DDL instead of fighting
+# over the exclusive lock CREATE OR REPLACE VIEW takes.
+_SCHEMA_LOCK_KEY = 743_929_101
 
 
 def _get_engine():
     global _engine
     if _engine is None:
         from sqlalchemy import create_engine
-        _engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+        connect_args = {"connect_timeout": 10}
+        # Kill any single statement that runs away, so a stuck query can't
+        # wedge a web worker indefinitely. Override via env if a migration
+        # legitimately needs longer.
+        stmt_timeout_ms = int(os.getenv("PG_STATEMENT_TIMEOUT_MS", "30000"))
+        if stmt_timeout_ms > 0:
+            connect_args["options"] = f"-c statement_timeout={stmt_timeout_ms}"
+        _engine = create_engine(
+            DATABASE_URL,
+            pool_pre_ping=True,
+            pool_recycle=300,
+            pool_size=int(os.getenv("PG_POOL_SIZE", "5")),
+            max_overflow=int(os.getenv("PG_MAX_OVERFLOW", "5")),
+            pool_timeout=10,
+            connect_args=connect_args,
+        )
     return _engine
 
 
@@ -712,30 +746,50 @@ def ensure_data_dir():
     (DATA_DIR / "pdfs" / "agendas").mkdir(parents=True, exist_ok=True)
 
 
+def ensure_schema():
+    """Create tables/view/indexes exactly once per process (PostgreSQL).
+
+    Safe to call repeatedly and from multiple threads; on failure the flag
+    stays unset so the next call retries.
+    """
+    global _schema_ready
+    if _schema_ready or not _use_pg():
+        return
+    with _schema_lock:
+        if _schema_ready:
+            return
+        from sqlalchemy import text
+        engine = _get_engine()
+        with engine.connect() as raw:
+            # Serialize DDL across processes; released at commit.
+            raw.execute(text(f"SELECT pg_advisory_xact_lock({_SCHEMA_LOCK_KEY})"))
+            for stmt in _TABLES_PG.split(";"):
+                stmt = stmt.strip()
+                if stmt:
+                    raw.execute(text(stmt))
+            raw.execute(text(_VIEW_PG))
+            raw.commit()
+            # FTS index in its own transaction so a failure here can't
+            # roll back the tables/view above.
+            try:
+                raw.execute(text(_FTS_INDEX_PG))
+                raw.commit()
+            except Exception:
+                raw.rollback()
+        _schema_ready = True
+
+
 def init_db(db_path: Path | None = None):
     """Initialise database and return a connection (sqlite3 or PG wrapper).
 
-    For PostgreSQL the *db_path* argument is ignored.
+    For PostgreSQL the *db_path* argument is ignored. Schema DDL runs once
+    per process, not per connection — CREATE OR REPLACE VIEW takes an
+    ACCESS EXCLUSIVE lock, and running it on every request serializes all
+    traffic behind it.
     """
     if _use_pg():
-        engine = _get_engine()
-        from sqlalchemy import text
-        raw = engine.connect()
-        conn = _PgConnection(raw)
-        # Create tables (idempotent)
-        for stmt in _TABLES_PG.split(";"):
-            stmt = stmt.strip()
-            if stmt:
-                raw.execute(text(stmt))
-        # View (CREATE OR REPLACE)
-        raw.execute(text(_VIEW_PG))
-        # FTS index
-        try:
-            raw.execute(text(_FTS_INDEX_PG))
-        except Exception:
-            pass  # already exists
-        raw.commit()
-        return conn
+        ensure_schema()
+        return _PgConnection(_get_engine().connect())
 
     # SQLite path (local dev)
     path = db_path or DB_PATH

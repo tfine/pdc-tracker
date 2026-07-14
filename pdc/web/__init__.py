@@ -7,6 +7,21 @@ def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = SECRET_KEY
 
+    # Run schema DDL once at worker boot rather than per request. A transient
+    # DB outage must not crash the worker — ensure_schema() retries on the
+    # next get_db() call.
+    try:
+        from pdc.db import ensure_schema
+        ensure_schema()
+    except Exception:
+        app.logger.exception("Schema init failed at boot; will retry on first request")
+
+    # Liveness probe for Railway. Deliberately DB-free: if the database has
+    # a blip we want 500s on content pages, not a platform restart loop.
+    @app.route("/healthz")
+    def healthz():
+        return {"status": "ok"}, 200
+
     # Make CDN URL available in all templates
     @app.context_processor
     def inject_globals():
