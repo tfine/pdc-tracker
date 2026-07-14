@@ -86,6 +86,42 @@ def sync(full):
     console.print("[bold green]Sync complete![/bold green]")
 
 
+@cli.command("backfill-wayback")
+@click.option("--dry-run", is_flag=True, help="List what would be fetched without downloading")
+def backfill_wayback(dry_run):
+    """Backfill 2004-2015 agendas/minutes from the Internet Archive."""
+    from pdc.ingest.wayback import discover_wayback_files, sync_wayback_agendas
+    from pdc.ingest.agenda_parser import sync_parse_agendas
+
+    if dry_run:
+        files = discover_wayback_files()
+        console.print(f"[bold]Archived agendas found:[/bold] {len(files['agendas'])}")
+        for f in files["agendas"]:
+            console.print(f"  {f['meeting_date']}  {f['filename']}")
+        console.print(f"[bold]Archived minutes found:[/bold] {len(files['minutes'])}")
+        for f in files["minutes"]:
+            console.print(f"  {f['meeting_date']}  {f['filename']}")
+        return
+
+    with get_db() as conn:
+        console.print("[bold]Fetching archived agendas/minutes from Wayback Machine...[/bold]")
+        result = sync_wayback_agendas(conn)
+        console.print(
+            f"  {result['agendas_found']} agendas + {result['minutes_found']} minutes found; "
+            f"{result['downloaded']} downloaded, {result['skipped']} already had, "
+            f"{result['failed']} failed"
+        )
+
+        console.print("[bold]Parsing recovered agenda PDFs...[/bold]")
+        parse_result = sync_parse_agendas(conn)
+        console.print(
+            f"  {parse_result['pdfs_parsed']} PDFs parsed, "
+            f"{parse_result['items_inserted']} items inserted"
+        )
+
+    console.print("[bold green]Backfill complete![/bold green]")
+
+
 @cli.command()
 @click.argument("project_id")
 def track(project_id):

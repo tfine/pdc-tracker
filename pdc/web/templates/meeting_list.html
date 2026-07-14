@@ -3,7 +3,16 @@
 {% block title %}Meetings{% endblock %}
 
 {% block content %}
-<h1>PDC Meetings</h1>
+<hgroup>
+    <h1>PDC Meetings</h1>
+    <p>{{ meetings|length }} meetings since {{ years[-1] if years }} &mdash; agendas before 2015 recovered from the <a href="https://web.archive.org" target="_blank">Internet Archive</a></p>
+</hgroup>
+
+{% if years|length > 1 %}
+<nav class="year-nav">
+    {% for y in years %}<a href="#y{{ y }}">{{ y }}</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}
+</nav>
+{% endif %}
 
 <div class="overflow-auto">
     <table>
@@ -11,12 +20,18 @@
             <th>Date</th><th>Items</th><th>Agenda</th><th>Minutes &amp; Certificates</th><th>Video</th>
         </tr></thead>
         <tbody>
+        {% set ns = namespace(year=None) %}
         {% for m in meetings %}
+        {% set myear = m["meeting_date"][:4] %}
+        {% if myear != ns.year %}
+        {% set ns.year = myear %}
+        <tr id="y{{ myear }}"><th colspan="5">{{ myear }}</th></tr>
+        {% endif %}
         <tr>
             <td><a href="{{ url_for('meetings.meeting_detail', meeting_date=m['meeting_date']) }}">{{ m["meeting_date"] }}</a></td>
             <td>{{ m["item_count"] }}</td>
-            <td>{% if m["agenda_pdf_url"] %}<a href="{{ CDN }}/agendas/{{ m['agenda_pdf_url'].split('/')[-1] }}" target="_blank">PDF</a>{% endif %}</td>
-            <td>{% if m["minutes_pdf_url"] %}<a href="{{ CDN }}/minutes/{{ m['minutes_pdf_url'].split('/')[-1] }}" target="_blank">PDF</a>{% endif %}</td>
+            <td>{% if m["agenda_pdf_url"] %}<a href="{{ CDN }}/agendas/{{ m['agenda_pdf_url'].split('/')[-1] | urlencode }}" target="_blank">PDF</a>{% endif %}</td>
+            <td>{% if m["minutes_pdf_url"] %}<a href="{{ CDN }}/minutes/{{ m['minutes_pdf_url'].split('/')[-1] | urlencode }}" target="_blank">PDF</a>{% endif %}</td>
             <td>{% if m["youtube_url"] %}<a href="{{ m['youtube_url'] }}" target="_blank">Watch</a>{% endif %}</td>
         </tr>
         {% endfor %}

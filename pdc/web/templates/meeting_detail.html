@@ -7,7 +7,7 @@
     <h1>PDC Meeting &mdash; {{ meeting["meeting_date"] }}</h1>
     <p>
         {% if meeting["agenda_pdf_url"] %}<a href="{{ meeting['agenda_pdf_url'] }}" target="_blank">Agenda PDF</a> &middot; {% endif %}
-        {% if meeting["minutes_pdf_url"] %}<a href="{{ cdn }}/minutes/{{ meeting['minutes_pdf_url'].split('/')[-1] }}" target="_blank">Minutes &amp; Certificates</a> &middot; {% endif %}
+        {% if meeting["minutes_pdf_url"] %}<a href="{{ cdn }}/minutes/{{ meeting['minutes_pdf_url'].split('/')[-1] | urlencode }}" target="_blank">Minutes &amp; Certificates</a> &middot; {% endif %}
         {% if meeting["youtube_url"] %}<a href="{{ meeting['youtube_url'] }}" target="_blank">YouTube</a> &middot; {% endif %}
         {{ items|length }} item{{ "s" if items|length != 1 }}
     </p>
@@ -43,10 +43,10 @@
                 <td>{{ item["agenda_section"] or "" }}</td>
                 <td>
                     {% if meeting["agenda_pdf_url"] %}
-                    <a href="{{ cdn }}/agendas/{{ meeting['agenda_pdf_url'].split('/')[-1] }}" target="_blank">Agenda</a><br>
+                    <a href="{{ cdn }}/agendas/{{ meeting['agenda_pdf_url'].split('/')[-1] | urlencode }}" target="_blank">Agenda</a><br>
                     {% endif %}
                     {% if meeting["minutes_pdf_url"] %}
-                    <a href="{{ cdn }}/minutes/{{ meeting['minutes_pdf_url'].split('/')[-1] }}" target="_blank">Minutes</a><br>
+                    <a href="{{ cdn }}/minutes/{{ meeting['minutes_pdf_url'].split('/')[-1] | urlencode }}" target="_blank">Minutes</a><br>
                     {% endif %}
                     {% if item["presentation_url"] %}
                     <a href="{{ cdn }}/presentations/{{ item['presentation_url'].split('/')[-1] }}" target="_blank">Presentation</a>

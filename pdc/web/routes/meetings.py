@@ -20,7 +20,8 @@ def meeting_list():
                ORDER BY m.meeting_date DESC"""
         ).fetchall()
 
-    return render_template("meeting_list.html", meetings=meetings)
+    years = sorted({m["meeting_date"][:4] for m in meetings}, reverse=True)
+    return render_template("meeting_list.html", meetings=meetings, years=years)
 
 
 @bp.route("/<meeting_date>")
