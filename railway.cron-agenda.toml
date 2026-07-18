@@ -1,0 +1,14 @@
+# Config for the "agenda-check" cron service on Railway.
+# In the service settings, set "Config-as-code file path" to this file.
+# Railway cron services run the start command to completion on schedule;
+# restart policy must be "never" or the finished run would loop forever.
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "python -m pdc.agenda_check"
+# Every 2 hours during NYC business hours (13-23 UTC ~ 9am-7pm ET), weekdays.
+# Agendas and minutes only ever get posted during city business hours.
+cronSchedule = "0 13-23/2 * * 1-5"
+restartPolicyType = "never"

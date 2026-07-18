@@ -9,12 +9,8 @@ healthcheckTimeout = 120
 # meant Railway gave up after 3 crashes and left the site down.
 restartPolicyType = "always"
 
-# Check for new agendas/minutes every 2 hours
-[[cron]]
-schedule = "0 */2 * * *"
-command = "python -m pdc.agenda_check"
-
-# Full sync weekly on Wednesdays at 2 PM UTC (10 AM NYC)
-[[cron]]
-schedule = "0 14 * * 3"
-command = "python -m pdc.sync_runner"
+# NOTE: Railway has no [[cron]] config — blocks like that are silently
+# ignored (which is why scheduled syncs never ran until July 2026).
+# Crons are separate Railway services, each pointed at its own config:
+#   railway.cron-agenda.toml  -> agenda-check service
+#   railway.cron-sync.toml    -> weekly-sync service
