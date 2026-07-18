@@ -94,6 +94,12 @@ def parse_agenda_text(text: str, meeting_date: str | None = None) -> list[dict]:
         if not match:
             continue
 
+        # Items struck from the agenda are suffixed WITHDRAWN (e.g.
+        # "... (CC 1, CB 1) DPR WITHDRAWN") — don't record them as
+        # review events.
+        if re.search(r"\bWITHDRAWN\b", line, re.IGNORECASE):
+            continue
+
         cert_number = match.group(1)
         title = match.group(2).strip()
         level_of_review = match.group(3).strip()
